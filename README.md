@@ -4,7 +4,8 @@ Login to your 2FA VPN with Tunnelblick
 
 ## Provides Commands
 
-Command              | Description
----------------------|-------------------------------------
-`vpn <name> <token>` | Connect to VPN with Tunnelblick
-`vpnq <name>`        | Disconnect from VPN with Tunnelblick
+Command                     | Description
+----------------------------|-------------------------------------------
+`vpn connect <name> <token>`| Connect to VPN with Tunnelblick
+`vpn disconnect <name>`     | Disconnect from VPN with Tunnelblick
+`vpn show configurations`   | List connections configured in Tunnelblick
