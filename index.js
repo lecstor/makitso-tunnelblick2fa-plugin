@@ -5,6 +5,20 @@ const shell = require("shelljs");
 // osascript -e "tell application \"/Applications/Tunnelblick.app\"" -e "connect \"prod\"" -e "end tell"
 // https://darthnull.org/building/2014/05/30/google-auth-tunnelblick/
 
+async function tellTb(command) {
+  return new Promise(resolve => {
+    shell.exec(
+      `osascript -e "tell application \\"/Applications/Tunnelblick.app\\"" \\
+      -e "${command}" \\
+      -e "end tell"`,
+      { silent: true },
+      (code, stdout, stderr) => {
+        resolve({ code, stdout, stderr });
+      }
+    );
+  });
+}
+
 /**
  * Update password in the keychain for Tunnelblick and tell Tunnelblick to connect the VPN
  *
@@ -13,17 +27,13 @@ const shell = require("shelljs");
  * @param {String} token - 2fa token from your device
  * @returns {void}
  */
-async function connectVpn(context, connectionName, token) {
-  const password = await context.get(`tunnnelblick.password.${connectionName}`);
+async function connectVpn(context, { configuration, token }) {
+  const password = await context.get(`tunnnelblick.password.${configuration}`);
   await context.set(
-    `tunnnelblick.passToken.${connectionName}`,
+    `tunnnelblick.passToken.${configuration}`,
     `${password}${token}`
   );
-  shell.exec(
-    `osascript -e "tell application \\"/Applications/Tunnelblick.app\\"" \\
-      -e "connect \\"${connectionName}\\"" \\
-      -e "end tell"`
-  );
+  return tellTb(`connect "${configuration}"`);
 }
 
 /**
@@ -33,11 +43,19 @@ async function connectVpn(context, connectionName, token) {
  * @param {String} connectionName - the connection name as is in Tunnelblick
  * @returns {void}
  */
-async function disconnectVpn(context, connectionName) {
-  shell.exec(
-    `osascript -e "tell application \\"/Applications/Tunnelblick.app\\"" \\
-      -e "disconnect \\"${connectionName}\\"" \\
-      -e "end tell"`
+async function disconnectVpn(context, { configuration }) {
+  return tellTb(`disconnect "${configuration}"`);
+}
+
+async function getConfigNames() {
+  return tellTb("get name of configurations").then(
+    ({ code, stdout, stderr }) => {
+      if (code) {
+        throw new Error(stderr);
+      }
+      let confs = stdout.replace(/\n$/, "").split(/,\s*/);
+      return confs;
+    }
   );
 }
 
@@ -66,16 +84,32 @@ const schema = {
 };
 
 const commands = {
-  connectVpn: {
-    command: "vpn <name> <token>",
+  connect: {
+    args: "configuration token",
     description: "Connect to VPN with Tunnelblick",
+    choices: {
+      configuration: getConfigNames
+    },
     action: connectVpn
   },
-  disconnectVpn: {
-    command: "vpnq <name>",
+  disconnect: {
+    args: "configuration",
     description: "Disconnect from VPN with Tunnelblick",
-    action: disconnectVpn
+    action: disconnectVpn,
+    choices: {
+      configuration: getConfigNames
+    }
+  },
+  show: {
+    configurations: {
+      description: "Show configured Tunnelblick VPN connections",
+      action: context => getConfigNames(context).then(console.log)
+    }
   }
+};
+
+const config = {
+  command: "vpn"
 };
 
 /**
@@ -83,7 +117,7 @@ const commands = {
  * @returns {Object} config - plugin config
  */
 function plugin() {
-  return { schema, commands };
+  return { schema, commands, config };
 }
 
 module.exports.plugin = plugin;
