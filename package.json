@@ -1,6 +1,6 @@
 {
   "name": "makitso-tunnelblick2fa-plugin",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Makitso plugin - Login to your 2FA VPN with Tunnelblick",
   "main": "index.js",
   "author": "jason@lecstor.com",
