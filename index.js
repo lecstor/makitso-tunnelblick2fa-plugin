@@ -55,14 +55,15 @@ async function disconnectVpn({ context, input }) {
 }
 
 async function getConnectionNames() {
-  // return tellTb("get name of configurations").then(
-  return tellTb("get configurations").then(({ code, stdout, stderr }) => {
-    if (code) {
-      throw new Error(stderr);
+  return tellTb("get name of configurations").then(
+    ({ code, stdout, stderr }) => {
+      if (code) {
+        throw new Error(stderr);
+      }
+      let confs = stdout.replace(/\n$/, "").split(/,\s*/);
+      return confs;
     }
-    let confs = stdout.replace(/\n$/, "").split(/,\s*/);
-    return confs;
-  });
+  );
 }
 
 async function getConnectionStates() {
